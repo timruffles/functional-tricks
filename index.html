@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">  
+    <title>No more pyramids - keeping callbacks neat</title>
+    <link rel="stylesheet" href="reveal/css/reveal.css">
+    <link rel="stylesheet" href="reveal/css/theme/solarized.css" id="theme">
+    <!-- <link rel="stylesheet" href="reveal/css/print/pdf.css"> -->
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- For syntax highlighting reveal/-->
+    <link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+</head>
+
+<body>
+
+<div class="reveal">
+<div class="slides">
+
+
+<section data-markdown data-state="highlight"><script type="text/template">
+
+  ## Functional Programming Tricks
+
+  ### @timruffles
+  ### sidekickjs.com
+
+</script>
+</section>
+
+<section data-markdown data-state=chapter><script type="text/template">
+  ## What is functional programming?
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  # How do we get from A&nbsp;to&nbsp;D?
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  ## Take A, hammer it into&nbsp;D
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  ## Turn A into B, turn B into C, turn C into D
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  # Pipelines of functions for data
+</script></section>
+
+<section data-markdown data-state=chapter><script type="text/template">
+  
+  # Loops are noise
+
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  ## `filter`, `sum`: sound like loops?
+
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  ## Loops are how, functions are what
+
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  # How do we filter?
+
+</script></section>
+
+
+<section data-markdown data-state=highlight><script type="text/template">
+  ## We've got some things, choose a subset
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Loops how, not what
+
+  ```
+  var members = [];
+  for(var i = 0, len = users.length; i < len; i++) {
+    // up until here all 'how'
+    // the isMember bit is the only thing specific
+    // everything else generic to all filters
+    if(user.isMember) {
+      members.push(user);
+    }
+  }
+  ```
+
+</script></section>
+<section data-markdown><script type="text/template">
+
+  ## Filtering with functions
+
+  - Split the filtering code from the filter
+
+  ```
+  var isMember = function(u) { return u.isMember };
+  var members = users.filter(isMember);
+  ```
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## On the array
+
+  - ES5 gives us array additions
+  - IE9+ has them, or can safely shim
+  - IE6+ can be slightly-unsafely shimmed
+  - Unsafe only if you iterate arrays completely incorrectly
+
+  ```
+  Function.prototype.filter = function(predicate,context) { /*...*/ };
+  for(var prop in array) {
+    // this is not the way to iterate arrays, and filter will appear
+    // in old and busted browsers
+  }
+  ```
+
+</script></section>
+
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  # Heard of map-reduce?
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Map
+
+  - Have some As, want some Bs
+  - Common: "all users IDs", "calculate a stat for all projects"
+  - `[A], (A -> B) -> [B]`
+
+  ```
+  // extracting some data from each
+  var names = users.map(function(user) { return user.name });
+
+  // a calculation for each user
+  var distanceFromMeanAge = users.map(function(user) {
+    return Math.abs(user.age - meanAge);
+  });
+  ```
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## Reduce
+
+  - Have a list of As, create a single B from them
+  - e.g: users to combined age for taking average
+  - `[A], (A -> B) -> B`
+  - Recursive, we return a B at every stage
+  - AKA fold: we're folding the list down to one thing
+
+  ```
+  // simple arithmetic
+  var totalAge = users.reduce(function(sum,user) {
+    return sum + user.age
+  },0);
+
+  // creating strings
+  var userList = users.reduce(function(html,user) {
+    return html + "<li>" + user.name + "</li>"
+  },"");
+  ```
+
+</script></section>
+
+
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  # Trick shot: deep lookup
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Lookup
+
+  ```
+  String.prototype.lookup = function(object) {
+    return this.split(".").reduce(function(obj,prop) {
+      return obj[prop];
+    },object);
+  };
+
+  "foo.bar.baz".lookup({foo: {bar: {baz: "hello!"}}})
+  ```
+
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## The whole crew
+
+  - filter: `[A], (A -> Boolean) -> [A]`
+  - map: `[A], (A -> B) -> [B]`
+  - reduce: `[A], (A -> B) -> B`
+  - some: `[A], (A -> Boolean) -> Boolean`
+  - every: `[A], (A -> Boolean) -> Boolean`
+  - forEach: `[A], (A -> Any) -> undefined`
+
+</script></section>
+
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  # What not how via composition
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## Stats
+
+  ```
+  function sum(xs) {
+    return xs.reduce(function(sum,x) {
+      return sum + x
+    },0);
+  }
+  function mean(xs) {
+    return sum(xs) / xs.length;
+  };
+  function standardDeviation(xs) {
+    var xMean = mean(xs);
+    var variance = xs.map(function(x) {
+      return Math.pow(x - xMean,2);
+    });
+    return Math.sqrt(mean(variance));
+  };
+  ```
+
+</script></section>
+
+
+<section data-markdown data-state=chapter><script type="text/template">
+  
+  # A partial solution
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## Asychronous process
+
+  ```
+  function updateProfile(req,res) {
+    getUser(res.params.userId,function(err,user) {
+      if(err) return res.send(404);
+      getProfile(user,function(err,profile) {
+        if(err) return res.send(500);
+        updateProfile(user,profile,req.params.profile,function(err) {
+          if(err) return res.send(500);
+        });
+      })
+    })
+  }
+  ```
+
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  # How can we flatten it?
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Name not enough
+
+  ```
+  function updateProfile(req,res) {
+    getUser(res.params.userId,function(err,user) {
+      // can't simply name - needs both params, one is in closure
+      getProfile(user,updateProfileWithUserAndProfile);
+    })
+  }
+  // has input for next step in process - but user is in closure
+  function updateProfileWithUserAndProfile(user,err,profile) {}
+  ```
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## Bind
+
+  - `Function.prototype.bind`
+  - Takes a function, returns a new version with more context
+  - Sets `this` context, and some arguments (left to right)
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Bound
+
+  ```
+  function updateProfile(req,res) {
+    getUser(res.params.userId,function(err,user) {
+      // bind the user context, returning a fn that 
+      // just needs err and profile
+      getProfile(user,updateProfileWithUserAndProfile.bind(null,user));
+    })
+  }
+  function updateProfileWithUserAndProfile(user,err,profile) {}
+  ```
+
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+  
+  # `bind` is a partial `partial`
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## `partial`
+
+  - Lets us set any of the arguments, not just left to right
+  - Doesn't bother with `this` binding, as it's not functional
+
+  ```
+  var square = Math.pow.partial(null,2);
+  var threeSquared = square(3);
+  ```
+
+  - Lets you define a base function, and derive convenience functions
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## A full-featured partial?
+
+  - Underscore only offers left-to-right
+  - Lo-dash offers right-to-left too
+  - Functional JS offers a complete one
+
+</script></section>
+
+<section data-markdown data-state=chapter><script type="text/template">
+  
+  # Let's write our own
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+  
+  ## Programming functions
+
+  - Manipulate arguments
+  - Create new versions of functions with new abilities
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Arguments
+
+  - `arguments` local variable created per function call
+  - Borked Array® like `NodeList`
+
+  ```javascript
+  arguments.map // not there
+  var args = [].slice.call(arguments)
+  args.map // there
+  ```
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Closures
+
+  - Scope in ES5 is only affected by functions, not blocks.
+  - Each function has access to parent scope, and starts its own
+  - Variables declared by `var`, or as a parameter, are local
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+  
+  ## Rebuild throttle
+
+  - Make wrapped function fire at most once in N milliseconds
+  - Pass on arguments
+
+</script></section>
+
+
+<section data-markdown><script type="text/template">
+
+  - Not returning as it's just for side-effects
+  
+  ```
+  Function.prototype.throttle = function(n) {
+    var fn = this;
+    var throttled = false;
+    return function() {
+      if(throttled) return;
+      throttled = true;
+      fn.apply(null,arguments);
+      setTimeout(function() {
+        throttled = false;
+      },n);
+    };
+  };
+  ```
+
+</script></section>
+
+
+
+<section data-markdown data-state=highlight><script type="text/template">
+
+  # Trick shot: tap
+
+</script></section>
+
+
+
+<section data-markdown><script type="text/template">
+
+  ## Tap
+
+  - Useful for debugging or logging
+  - Or for functions that return a modified version of something
+
+  ```
+  users.map(something).tap(function(transformed) {
+    console.log(transformed[0]);
+  })
+  ```
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+
+  ## Tap
+
+  ```
+  function tap(x,fn) {
+    fn(x);
+    return x;
+  }
+  ```
+
+</script></section>
+
+<section data-markdown data-state=highlight><script type="text/template">
+
+  # Trick shot: mixing FP with OO
+
+</script></section>
+
+<section data-markdown data-state=chapter><script type="text/template">
+
+  ## Thanks!
+
+  <br />
+  <br />
+  <br />
+
+  ### @timruffles
+  ### ask for SidekickJS beta + discount :)
+
+</script></section>
+
+
+</div>
+</div>
+
+<script src="reveal/lib/js/head.min.js"></script>
+<script src="reveal/js/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+
+    // Display controls in the bottom right corner
+    controls: false,
+
+    // Display a presentation progress bar
+    progress: true,
+
+    // Push each slide change to the browser history
+    history: true,
+
+    // Enable keyboard shortcuts for navigation
+    keyboard: true,
+
+    // Enable the slide overview mode
+    overview: true,
+
+    // Vertical centering of slides
+    center: false,
+
+    // Loop the presentation
+    loop: false,
+
+    // Change the presentation direction to be RTL
+    rtl: false,
+
+    // Number of milliseconds between automatically proceeding to the
+    // next slide, disabled when set to 0, this value can be overwritten
+    // by using a data-autoslide attribute on your slides
+    autoSlide: 0,
+
+    // Enable slide navigation via mouse wheel
+    mouseWheel: false,
+
+    // Apply a 3D roll to links on hover
+    rollingLinks: false,
+
+    // Transition style
+    transition: 'linear', // default/cube/page/concave/zoom/linear/fade/none
+
+    dependencies: [
+        // Cross-browser shim that fully implements classList - https://github.com/eligrey/classList.js/
+        { src: 'reveal/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+
+        // Interreveal/pret Markdown in <section> elements
+        { src: 'reveal/plugin/markdown/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        { src: 'reveal/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+
+        // Syntareveal/x highlight for <code> elements
+        { src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+
+        // Zoom reveal/in and out with Alt+click
+        { src: 'reveal/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+
+        // Speakreveal/er notes
+        { src: 'reveal/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+
+        // Remotreveal/e control your reveal.js presentation using a touch device
+        // { src: 'reveal/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+    ]
+
+  });
+Reveal.addEventListener( 'highlight', function() {
+  console.log("state")
+}, false );
+  
+</script>
+</body>

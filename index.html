@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">  
-    <title>No more pyramids - keeping callbacks neat</title>
+    <title>Functional Javascript Tools &amp; Tips</title>
     <link rel="stylesheet" href="reveal/css/reveal.css">
     <link rel="stylesheet" href="reveal/css/theme/solarized.css" id="theme">
     <!-- <link rel="stylesheet" href="reveal/css/print/pdf.css"> -->
@@ -22,7 +22,7 @@
 
 <section data-markdown data-state="highlight"><script type="text/template">
 
-  ## Functional Programming Tricks
+  ## Functional Javascript Tools &amp; Tips
 
   ### @timruffles
   ### sidekickjs.com
@@ -43,7 +43,7 @@
 </script></section>
 
 <section data-markdown data-state=highlight><script type="text/template">
-  ## Turn A into B, turn B into C, turn C into D
+  ## Turn A into B, B -> C, C&nbsp;->&nbsp;D
 </script></section>
 
 <section data-markdown data-state=highlight><script type="text/template">
@@ -395,6 +395,26 @@
 
 </script></section>
 
+
+<section data-markdown><script type="text/template">
+
+  ## Call & apply
+
+  - Set value of `this` &amp; args for a call
+  - `apply` passes an array of arguments
+  - Used with `arguments` to manipulate args to pass on to other functions
+  - Programatically control of functions
+
+  ```
+  var a = {foo: "bar"}
+  // fn called with this == a, and args 1,2,3
+  fn.call(a,1,2,3);
+  // identical
+  fn.apply(a,[1,2,3]);
+  ```
+
+</script></section>
+
 <section data-markdown><script type="text/template">
   
   ## Closures
@@ -402,6 +422,27 @@
   - Scope in ES5 is only affected by functions, not blocks.
   - Each function has access to parent scope, and starts its own
   - Variables declared by `var`, or as a parameter, are local
+
+  ```
+  if(foo) {
+    var b = "hello";
+  }
+  // b either undefined or "hello": does exist in both cases
+  console.log(b);
+  ```
+
+  - Function scope
+
+  ```
+  (function() {
+    var c = "hello";
+    (function() {
+      // can see c here
+      console.log(c);
+    })();
+  })();
+  // c not set here
+  ```
 
 </script></section>
 
@@ -440,7 +481,7 @@
 
 <section data-markdown data-state=highlight><script type="text/template">
 
-  # Trick shot: tap
+  # Trick shot: plucker
 
 </script></section>
 
@@ -448,27 +489,43 @@
 
 <section data-markdown><script type="text/template">
 
-  ## Tap
+  ## Plucker
 
-  - Useful for debugging or logging
-  - Or for functions that return a modified version of something
+  - Useful for d3 or other enumerable libs
 
   ```
-  users.map(something).tap(function(transformed) {
-    console.log(transformed[0]);
-  })
+  selection
+    .text(function(d) {
+      return d.title
+    })
+    .attr("width",function(d) {
+      return clickScale(d.clicks);
+    });
+  ```
+
+  - becomes
+
+  ```
+  selection
+    .text(plucker("title"))
+    .attr("width",_.compose(clickScale,plucker("clicks")));
   ```
 
 </script></section>
 
 <section data-markdown><script type="text/template">
 
-  ## Tap
+  ## Plucker
 
   ```
-  function tap(x,fn) {
-    fn(x);
-    return x;
+  function plucker(prop) {
+    var args = [].slice.call(arguments,1);
+    return function(obj) {
+      if(typeof obj[prop] == "function") {
+        return obj[prop].apply(null,args);
+      }
+      return obj[prop];
+    }
   }
   ```
 
@@ -477,6 +534,18 @@
 <section data-markdown data-state=highlight><script type="text/template">
 
   # Trick shot: mixing FP with OO
+
+</script></section>
+
+<section data-markdown><script type="text/template">
+
+  ## All together
+
+  - FP = pipelines
+  - Replace how with what
+  - `bind` and `partial` for context
+  - Roll your own with `call` and `apply`
+  - Don't be dogmatic - JS isn't
 
 </script></section>
 
